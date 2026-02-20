@@ -9,12 +9,12 @@ app.use(cors({
     credentials: true
 }))
 
+app.use(cookieParser())
+
 app.use(expres.json({limit: '16kb'}))
 
 app.use(expres.urlencoded())
 
 app.use(expres.static('public'))
-
-app.use(cookieParser())
 
 export default app
