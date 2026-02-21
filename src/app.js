@@ -9,12 +9,18 @@ app.use(cors({
     credentials: true
 }))
 
-app.use(cookieParser())
-
 app.use(expres.json({limit: '16kb'}))
 
 app.use(expres.urlencoded())
 
 app.use(expres.static('public'))
+
+app.use(cookieParser())
+
+//routes
+
+import userRouter from './routes/user.route.js'
+
+app.use("/api/v1/users", userRouter)
 
 export default app
