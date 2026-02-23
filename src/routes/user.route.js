@@ -1,13 +1,13 @@
 import { Router } from "express";
 import registerUser from "../controllers/user.controller.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";  //used this cause without this we can only get data not files and this is middleware
 
-const userRouter = Router();
+const router = Router();
 
-userRouter.route("/register").post(upload.fields(
+router.route("/register").post(upload.fields(
     [
         {
-            name: "avtar",
+            name: "avatar",
             maxCount: 1
         },
         {
@@ -17,6 +17,6 @@ userRouter.route("/register").post(upload.fields(
     ]), 
 registerUser);
 
-export default userRouter;
+export default router;
 
 //if there is an error change userRouter to router
