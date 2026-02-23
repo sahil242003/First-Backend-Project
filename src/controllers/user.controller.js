@@ -4,6 +4,22 @@ import { User } from "../models/user.model.js"; // imported this beacuse it is d
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
+const generateAccesAndRefreshTokens = async(userId) => {
+  try{
+    const user = await User.findById(userId)
+    const accessToken = user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    await user.save({validateBeforeSave: false})
+
+    return {accessToken, refreshToken}
+
+  } catch(error){
+    throw new ApiError(500, "something went wrong while generating refresh and access token")
+  }
+}
+
 const registerUser = asyncHandler(async (req, res) => {
   //get user details from frontend
   //validation - not empty
@@ -85,4 +101,86 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
 
-export default registerUser;
+const loginUser = asyncHandler(async (req, res) => {
+//req body - data
+//username or email
+//find the user
+//password check
+//access and refresh token
+//send cookies
+
+//get data from body
+const {email, password, username} = req.body
+
+//check if username or email is not empty
+if(!username || !email){
+  throw new ApiError(400, "username or email is required")
+}
+
+//check for user username or email from DB
+const user = await User.findOne({
+  $or: [{username}, {email}]
+})
+
+if(!user){
+  throw new ApiError(404, "User not found")
+}
+
+//password check
+const isPasswordValid = await user.isPasswordCorrect(password)  // use (user) not (User) cause user from response and User is from mongoDB
+
+if(!isPasswordValid){
+  throw new ApiError(401, "incorrect password")
+}
+
+//access refresh and access tokens
+const {accessToken, refreshToken} = await generateAccesAndRefreshTokens(user._id)
+
+const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+//send in cookies
+const options = {
+  httpOnly: true,
+  secure: true
+}
+
+return res
+.status(200)
+.cookie("accessToken", accessToken, options)
+.cookie("refreshToken", refreshToken, options)
+.json(
+  new ApiResponse(200, {       //from here all is data from apiResponse
+    user: loggedInUser, accessToken, refreshToken
+  }, "User logged in successfully")
+)
+})
+
+const logOutUser = asyncHandler(async(req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,  //from auth.middleware
+    { //$set is mongoDB operator
+      $set: {
+        refreshToken: undefined
+      }
+    },
+    {
+      new: true
+    }
+  )
+
+  //cookie options
+  //httpOnly means cookies can't be accessed via JavaScript (prevents XSS attacks), and secure means they only travel over HTTPS.
+  const options = {
+  httpOnly: true,
+  secure: true
+}
+
+return res
+.status(200)
+.clearCookie("accessToken", options)
+.clearCookie("refreshToken", options)
+.json(new ApiResponse(200, {}, "User logged out successfully"))
+})
+
+
+export {registerUser, loginUser, logOutUser};
