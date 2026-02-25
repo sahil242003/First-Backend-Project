@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {loginUser, logOutUser, registerUser} from "../controllers/user.controller.js";
+import {loginUser, logOutUser, registerUser, refreshAccessToken} from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";  //used this cause without this we can only get data not files and this is middleware
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -24,6 +24,7 @@ router.route("/login").post(loginUser)
 
 // router.route("/logout").post(verifyJWT, logOutUser)
 router.route("/logout").post(verifyJWT, logOutUser)
+router.route("/refresh-token").post(refreshAccessToken)
 
 export default router;
 
