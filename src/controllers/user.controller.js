@@ -166,7 +166,8 @@ const logOutUser = asyncHandler(async(req, res) => {
       }
     },
     {
-      new: true
+      // new: true
+      returnDocument: "after"
     }
   )
 
@@ -184,7 +185,9 @@ return res
 .json(new ApiResponse(200, {}, "User logged out successfully"))
 })
 
+//this is when access token gets expire and now we want to give user new access token without again taking users email and password so we match refresh token and then give user new access token
 const refreshAccessToken = asyncHandler(async(req, res) => {
+  //req refresh token in the form of cookies or in mobile from body
   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
   if(!incomingRefreshToken){
@@ -192,6 +195,7 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
   }
 
   try {
+    //verify refresh token
     const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
     
     const user = await User.findById(decodedToken?._id)
@@ -200,6 +204,7 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
       throw new ApiError(401, "invalid refresh token")
     }
   
+    // Even if the token is cryptographically valid, it compares it against the refresh token stored in the database. This catches two situations — if the user has already logged out (token cleared from DB), or if the token was already used once to generate a new one (rotation).
     if(incomingRefreshToken !== user?.refreshToken){
       throw new ApiError(401, "refresh token is expired or used")
     }
@@ -209,6 +214,7 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
       secure: true
     }
   
+    //Generates a brand new access token and a new refresh token. This is called token rotation
     const {accessToken, newRefreshToken} = await generateAccesAndRefreshTokens(user._id)
   
     return res
