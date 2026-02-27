@@ -162,8 +162,8 @@ const logOutUser = asyncHandler(async(req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,  //from auth.middleware
     { //$set is mongoDB operator
-      $set: {
-        refreshToken: undefined
+      $unset: {
+        refreshToken: 1 //this removes the field from document
       }
     },
     {
