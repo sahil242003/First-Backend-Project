@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"; // imported this beacuse it is d
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose";
 
 const generateAccesAndRefreshTokens = async(userId) => {
   try{
@@ -236,8 +237,8 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
 const changeCurrentPassword = asyncHandler(async(req, res) => {
   const {oldPassword, newPassword, confirmPassword} = req.body
 
-  if(!(newPassword === confirmPassword)){
-    throw new ApiError(400, "Both new and confirm password should be same")
+  if(newPassword !== confirmPassword){
+    throw new ApiError(400, "new password and Confirmed password is not same")
   }
 
   const user = await User.findById(req.user?._id)
@@ -249,27 +250,27 @@ const changeCurrentPassword = asyncHandler(async(req, res) => {
   }
 
   user.password = newPassword
-  await user.save({validateBeforeSave: false})
+  await user.save({validateBeforeSave: false})  //cause user.model.js (line 60)
 
   return res
   .status(200)
-  .json(new ApiError(200, {}, "Password changed successfully"))
+  .json(new ApiResponse(200, {}, "Password changed succefully"))
 })
 
 const getCurrentUser = asyncHandler(async(req, res) => {
   return res
   .status(200)
-  .json(200, req.user, "Current user fetched successfully")
+  .json(new ApiResponse(200, req.user, "User fetched succesfully"))
 })
 
 const updateAcountDetalis = asyncHandler(async(req, res) => {
   const {fullname, email} = req.body
 
-  if(!(fullname || email)){
+  if(!fullname || !email){
     throw new ApiError(400, "all fields are required")
   }
 
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -350,4 +351,123 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
   )
 })
 
-export {registerUser, loginUser, logOutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAcountDetalis, updateUserAvatar, updateUserCoverImage};
+const getUserChannelProfile = asyncHandler(async(req, res) => {
+  const {username} = req.params  //(req.params) means from req from url
+
+  if(!username?.trim()){
+    throw new ApiError(400, "Username is missing")
+  }
+
+  const channel = await User.aggregate([
+    { //finds the user
+      $match: {
+        username: username?.toLowerCase()
+      }
+    },
+    {
+      $lookup: {   // for channel subscribers (to find channel subscriber find the channel docs)
+        from: "subscriptions", //from subscription.model.js (line 18) in mongoDb name become plural and first letter becomes small
+        localField: "_id",
+        foreignField: "channel", //find docs where this user's _id is the channel
+        as: "subscribers"  //store results in a "subscribers" array
+      }
+    },
+    {
+      $lookup: {  //for channels user subscribed to
+        from: "Subscriptions",  //from subscription.model.js (line 18) in mongoDb name become plural and first letter becomes small
+        localField: "_id",
+        foreignField: "subscriber", //find docs where this user's _id is the subscriber
+        as: "subscribedTo"  //store results in a "subscribedTo" array
+      }
+    },
+    {
+      $addFields:{
+        subscribersCount: {
+          $size: "$subscribers"
+        },
+        channelSubscribedToCount: {
+          $size: "$subscribedTo"
+        },
+        isSubscribed: {
+          $cond: {
+            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        fullname: 1,
+        username: 1,
+        subscribersCount: 1,
+        channelSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1
+      }
+    }
+  ])
+
+  if(!channel?.length){
+    throw new ApiError(404, "channel does't exists")
+  }
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200, channel[0], "user channel fetched successfully")  //in return first value is important that's why channel[0]
+  )
+})
+
+const getWatchHistory = asyncHandler(async(req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id)
+      }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullname: 1, 
+                    username: 1,
+                    avatar: 1
+                  }
+                },
+                {
+                  $addFields: {
+                    owner: {
+                      $first: "$owner"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ])
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
+})
+
+export {registerUser, loginUser, logOutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAcountDetalis, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory};
