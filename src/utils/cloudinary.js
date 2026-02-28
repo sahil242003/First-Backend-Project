@@ -1,28 +1,31 @@
-import { v2 as cloudinary } from 'cloudinary'
-import fs from "fs"
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
-    try{
-        if(!localFilePath) return null
-        
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: 'auto'
-        })
-        // console.log(`File is uploaded on cloudinary `, response.url);
-        fs.unlinkSync(localFilePath)  //removes file locally when upload is done on cloudinary
-        return response
-    } catch(error){ 
-        fs.unlinkSync(localFilePath);  //removes the locally saved temp file as the upload got fail
-        return null;
+  try {
+    if (!localFilePath) return null;
+
+    const response = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: "auto",
+    });
+    // console.log(`File is uploaded on cloudinary `, response.url);
+    fs.unlinkSync(localFilePath); //removes file locally when upload is done on cloudinary
+    return response;
+  } catch (error) {
+    console.error("Cloudinary ERROR:", error.message);
+
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
     }
-}
 
-export {uploadOnCloudinary}
+    return null;
+  }
+};
 
-
+export { uploadOnCloudinary };

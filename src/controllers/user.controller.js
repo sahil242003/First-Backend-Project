@@ -33,8 +33,8 @@ const registerUser = asyncHandler(async (req, res) => {
   //check for user creation
   //return res
 
-  // console.log(req.files);
-  // console.log(req.body);
+  console.log(req.files);
+  console.log(req.body);
   
 
   //get user details from frontend
@@ -102,6 +102,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
+ 
 
 const loginUser = asyncHandler(async (req, res) => {
 //req body - data
@@ -161,7 +162,7 @@ return res
 const logOutUser = asyncHandler(async(req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,  //from auth.middleware
-    { //$set is mongoDB operator
+    { //$unset is mongoDB operator
       $unset: {
         refreshToken: 1 //this removes the field from document
       }
