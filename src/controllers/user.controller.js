@@ -33,9 +33,8 @@ const registerUser = asyncHandler(async (req, res) => {
   //check for user creation
   //return res
 
-  console.log(req.files);
-  console.log(req.body);
-  
+  // console.log(req.files);
+  // console.log(req.body);
 
   //get user details from frontend
   const { username, fullname, email, password } = req.body;
@@ -57,7 +56,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //check for images, check for avtar
- const avatarLocalPath = req.files?.avatar?.[0]?.path
+ const avatarLocalPath = req.files?.avatar?.[0]?.path  //localPath cause it's on server not on cloud
  const coverImageLocalPath = req.files?.coverImage?.[0]?.path
 
  //other way for coverImage logic

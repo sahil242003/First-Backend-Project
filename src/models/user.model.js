@@ -10,7 +10,7 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
+      index: true,   //to enable searching feild to object effectively type (index: true)
     },
     email: {
       type: String,
@@ -32,7 +32,7 @@ const userSchema = new Schema(
     coverImage: {
       type: String, // from cloudinary
     },
-    watchHistory: [
+    watchHistory: [   //array cause we will add multiple values (videos)
       {
         type: Schema.Types.ObjectId,
         ref: "Video",
