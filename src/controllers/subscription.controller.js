@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 
-// ✅ 1. Toggle Subscription
+//Toggle Subscription
 const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params
 
@@ -14,7 +14,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid channel ID")
     }
 
-    const subscriberId = req.user?._id   // assuming auth middleware sets req.user
+    const subscriberId = req.user?._id  
 
     if (!subscriberId) {
         throw new ApiError(401, "Unauthorized request")
@@ -30,7 +30,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     })
 
     if (existingSubscription) {
-        // 🔴 If already subscribed → unsubscribe
+        //If already subscribed → unsubscribe
         await Subscription.findByIdAndDelete(existingSubscription._id)
 
         return res.status(200).json(
@@ -38,7 +38,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         )
     }
 
-    // 🟢 If not subscribed → subscribe
+    //If not subscribed → subscribe
     await Subscription.create({
         subscriber: subscriberId,
         channel: channelId
@@ -50,7 +50,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 })
 
 
-// ✅ 2. Get Subscribers of a Channel
+//Get Subscribers of a Channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const { channelId } = req.params
 
@@ -74,7 +74,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 })
 
 
-// ✅ 3. Get Channels User Has Subscribed To
+//Get Channels User Has Subscribed To
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params
 

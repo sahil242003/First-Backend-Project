@@ -43,7 +43,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "Invalid comment ID")
     }
-
+    
     const existingLike = await Like.findOne({
         comment: commentId,
         likedBy: req.user._id

@@ -45,3 +45,13 @@ export default router;
 //GET    → "give me data" 
 //POST   → "here's new data"
 //PATCH  → "update part of this"
+
+
+/*
+Method	       Purpose
+GET	           Fetch data
+POST	       Create data
+PATCH	       Update partial data
+PUT 	       Replace data
+DELETE 	       Delete data
+*/

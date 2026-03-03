@@ -162,7 +162,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     if (!isValidObjectId(playlistId)) {
         throw new ApiError(400, "Invalid playlist ID")
     }
-
+    
     const playlist = await Playlist.findById(playlistId)
 
     if (!playlist) {
